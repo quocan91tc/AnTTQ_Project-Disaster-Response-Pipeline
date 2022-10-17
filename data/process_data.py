@@ -53,11 +53,12 @@ def clean_data(df):
     # concatenate the original dataframe with the new `categories` dataframe
     df = pd.concat([df, categories], axis=1)
     
+    # convert to binary
+    df = df[df.related != 2]
+    
     # drop duplicates
     df.drop_duplicates(subset=['id'], keep=False, inplace=True)
     
-    # drop the outlier of storm where row[storm] = 2
-    df = df[df.storm != 2]
     
     return df
 
