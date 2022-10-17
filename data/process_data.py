@@ -4,6 +4,15 @@ import pandas as pd
 from sqlalchemy import create_engine
 
 def load_data(messages_filepath, categories_filepath):
+    '''
+    Load dataset message and catgories into 1 dataframe
+    
+    Params:
+        - messages_filepath (str): file path of the message csv data file
+        - categories_filepath (str): file path of the categories csv data file
+    Return:
+        a Pandas DataFrame
+    '''
     messages = pd.read_csv(messages_filepath)
     categories = pd.read_csv(categories_filepath)
     
@@ -13,6 +22,14 @@ def load_data(messages_filepath, categories_filepath):
     return df
     
 def clean_data(df):
+    '''
+    Separate Categories column to 36 columns with binary value and clean the duplicated records 
+    
+    Params:
+        - df (Pandas.DataFrame): raw dataset
+    Return:
+        cleaned dataframe
+    '''
     categories = df['categories'].str.split(pat=';', expand=True)
     # select the first row of the categories dataframe
     row = categories.iloc[0,:]
@@ -39,12 +56,22 @@ def clean_data(df):
     # drop duplicates
     df.drop_duplicates(subset=['id'], keep=False, inplace=True)
     
+    # drop the outlier of storm where row[storm] = 2
+    df = df[df.storm != 2]
+    
     return df
 
 
 def save_data(df, database_filename):
+    '''
+    Save dataframe into Sqlite3 database
+    
+    Params: 
+        - df (Pandas.DataFrame): dataframe want to save
+        - database_filename (str): path of .db file where to save dataframe into
+    '''
     engine = create_engine(f'sqlite:///{database_filename}')
-    df.to_sql('DisasterResponse', engine, index=False)  
+    df.to_sql('DisasterResponse', engine, index=False, if_exists='replace')  
 
 
 def main():

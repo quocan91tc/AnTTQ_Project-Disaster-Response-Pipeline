@@ -21,7 +21,12 @@ from sklearn.metrics import classification_report
 
 def load_data(database_filepath):
     '''
-    Load data from db with SQLAlchemy
+    Load data from sqlite3 db using pandas API
+    
+    Params:
+        - database_filepath (str): .db file path which have the data you want to load
+    Return:
+        A Pandas DataFrame
     '''
     try:
         engine = create_engine(f'sqlite:///{database_filepath}')
@@ -40,6 +45,14 @@ def load_data(database_filepath):
 
     
 def tokenize(text):
+    '''
+    Tokenize text sentence into lemmatized words
+    
+    Params:
+        - text (str): text sentence
+    Return:
+        List of tokenized lemmatized words
+    '''
     tokens = word_tokenize(text)
     lemmatizer = WordNetLemmatizer()
 
@@ -53,7 +66,12 @@ def tokenize(text):
 
 def build_model():
     '''
-    Build model with Pipeline and GridSearchCV for finding the best params
+    Build model with Pipeline, using CountVetorizer with tokenize function, 
+    TfidfTransformer and use MultiOutputClass with RandomForest 
+    for classify multiple output class
+    
+    Return:
+        a Pipeline object
     '''
     pipeline = Pipeline([
         ('features', FeatureUnion([
@@ -64,19 +82,20 @@ def build_model():
         ])),
         ('mcl', MultiOutputClassifier(RandomForestClassifier()))
     ])
-
-#     parameters = {
-#         'features__text_pipeline__vect__ngram_range': ((1, 1), (1, 2)),
-#         'mcl__estimator__n_estimators': [100, 150],
-#         'mcl__estimator__min_samples_split': [2, 3]
-#     }
-
-#     cv = GridSearchCV(pipeline, param_grid=parameters)
     
     return pipeline
 
 
 def evaluate_model(model, X_test, Y_test, category_names):
+    '''
+    Evaluate model by using metrics f1 score, precision and recall 
+    for each output category of the dataset
+    
+    Params:
+        - X_test: data for testing
+        - Y_test: data for testing
+        - category_names: list of category in dataset
+    '''
     Y_pred = model.predict(X_test)
     
     for idx, column in enumerate(category_names):
@@ -84,6 +103,13 @@ def evaluate_model(model, X_test, Y_test, category_names):
 
 
 def save_model(model, model_filepath):
+    '''
+    Save pretrained model into pickle file with given file path
+    
+    Params:
+        - model: pretrained model
+        - model_filepath: desired pickle file path 
+    '''
     try:
         pickle.dump(model, open(model_filepath,'wb'))
         print('DEBUG: Saved model successfully')

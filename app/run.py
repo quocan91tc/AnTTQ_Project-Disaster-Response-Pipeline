@@ -10,6 +10,7 @@ from flask import render_template, request, jsonify
 from plotly.graph_objs import Bar
 from sklearn.externals import joblib
 from sqlalchemy import create_engine
+import numpy as np
 
 
 app = Flask(__name__)
@@ -53,18 +54,33 @@ def index():
 
     # extract data needed for visuals
     # TODO: Below is an example - modify to extract data for your own visuals
-    for col in df:
+    df_categories = df.drop(['id', 'message', 'original', 'genre'], axis=1)
+    categories = list(df_categories.keys())
+    categories_count = np.zeros(len(categories))
+    
+    for col in df_categories:
+        idx = categories.index(col)
+        categories_count[idx] = df_categories[col].sum()
+           
         if col in aid_products:
-            n_aid_products += df[col].sum()
+            n_aid_products += df_categories[col].sum()
         elif col in aid_people:
-            n_aid_people += df[col].sum()
+            n_aid_people += df_categories[col].sum()
         elif col in infras_related:
-            n_infras += df[col].sum()
+            n_infras += df_categories[col].sum()
         elif col in weather_related:
-            n_weather += df[col].sum()
+            n_weather += df_categories[col].sum()
         else:
             continue
     
+    # top 10 message most received
+    categories_sorted_idx = np.argsort(categories_count)[-10:]
+    top_10_count = []
+    top_10_cat = []
+    for idx in categories_sorted_idx:
+        top_10_count.append(categories_count[idx])
+        top_10_cat.append(categories[idx])
+        
     # create visuals
     # TODO: Below is an example - modify to create your own visuals
     graphs = [
@@ -83,6 +99,24 @@ def index():
                 },
                 'xaxis': {
                     'title': "Message Types"
+                }
+            }
+        },
+        {
+            'data': [
+                Bar(
+                    x=top_10_cat,
+                    y=top_10_count
+                )
+            ],
+
+            'layout': {
+                'title': 'Top 10 most received Message Category',
+                'yaxis': {
+                    'title': "Count"
+                },
+                'xaxis': {
+                    'title': "Category"
                 }
             }
         }
