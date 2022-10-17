@@ -26,22 +26,44 @@ def tokenize(text):
     return clean_tokens
 
 # load data
-engine = create_engine('sqlite:///../data/YourDatabaseName.db')
-df = pd.read_sql_table('YourTableName', engine)
+engine = create_engine('sqlite:///../data/DisasterResponse.db')
+df = pd.read_sql_table('DisasterResponse', engine)
 
 # load model
-model = joblib.load("../models/your_model_name.pkl")
+model = joblib.load("../models/classifier.pkl")
+
+# response categories type
+types = ['aid_products', 'aid_people', 'infras_related', 'weather_related']
+aid_products = ['medical_help', 'medical_products', 'water', 'food', 'clothing', 'shelter', 'money']
+aid_people = ['search_and_rescue', 'child_alone', 'missing_people', 'refugees', 'security', 'military', 'death']
+infras_related = ['infrastructure_related', 'buildings', 'transport', 'electricity', 'tools', 'shops', 'aid_centers', 'hospitals']
+weather_related = ['weather_related', 'floods', 'storm', 'fire', 'earthquake', 'cold', 'other_weather']
 
 
 # index webpage displays cool visuals and receives user input text for model
 @app.route('/')
 @app.route('/index')
 def index():
-    
+    # count for each category
+    total_response = df.shape[0]
+    n_aid_products = 0
+    n_aid_people = 0
+    n_infras = 0
+    n_weather = 0
+
     # extract data needed for visuals
     # TODO: Below is an example - modify to extract data for your own visuals
-    genre_counts = df.groupby('genre').count()['message']
-    genre_names = list(genre_counts.index)
+    for col in df:
+        if col in aid_products:
+            n_aid_products += df[col].sum()
+        elif col in aid_people:
+            n_aid_people += df[col].sum()
+        elif col in infras_related:
+            n_infras += df[col].sum()
+        elif col in weather_related:
+            n_weather += df[col].sum()
+        else:
+            continue
     
     # create visuals
     # TODO: Below is an example - modify to create your own visuals
@@ -49,18 +71,18 @@ def index():
         {
             'data': [
                 Bar(
-                    x=genre_names,
-                    y=genre_counts
+                    x=types,
+                    y=[n_aid_products, n_aid_people, n_infras, n_weather]
                 )
             ],
 
             'layout': {
-                'title': 'Distribution of Message Genres',
+                'title': 'Distribution of Message Types',
                 'yaxis': {
                     'title': "Count"
                 },
                 'xaxis': {
-                    'title': "Genre"
+                    'title': "Message Types"
                 }
             }
         }
